@@ -7,8 +7,6 @@ dotenv.config({
   path: path.resolve(process.cwd(), `.env.${APP_ENV}.local`),
 });
 
-console.log("🔧 Environment:", APP_ENV);
-console.log("🌐 Base URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
 
 module.exports = {
   reactStrictMode: true,
