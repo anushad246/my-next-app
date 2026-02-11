@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cross-env NODE_ENV=development APP_ENV=development next dev",
-    "build:staging": "cross-env NODE_ENV=production APP_ENV=staging next build",
-    "start:staging": "cross-env NODE_ENV=production APP_ENV=staging next start",
-    "build:prod": "cross-env NODE_ENV=production APP_ENV=production next build",
-    "start:prod": "cross-env NODE_ENV=production APP_ENV=production next start"
+    "dev": "cross-env NEXT_PUBLIC_ENV=development next dev",
+    "build:testing": "cross-env NEXT_PUBLIC_ENV=testing next build",
+    "start:testing": "cross-env NEXT_PUBLIC_ENV=testing next start",
+    "build:prod": "cross-env NEXT_PUBLIC_ENV=production next build",
+    "start:prod": "cross-env NEXT_PUBLIC_ENV=production next start"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.10.1",
