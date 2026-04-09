@@ -8,7 +8,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="flex flex-col h-screen">
-        <EnvironmentIndicator />
+        {/* <EnvironmentIndicator /> */}
         <main className="flex-1 bg-gray-50">
           <Provider store={store}>{children}</Provider>
         </main>
