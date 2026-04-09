@@ -1,10 +1,23 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { RootState } from "../store";
+import { APP_CONFIG } from "@/config/config";
 
+// Types
+interface RefreshTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+}
 
+interface AuthState {
+  accessToken: string | null;
+  refreshToken: string | null;
+}
+
+// Base query configuration
 const baseQuery = fetchBaseQuery({
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+  baseUrl: APP_CONFIG.apiBaseUrl,
+  credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     const token = (getState() as RootState).auth.accessToken;
     if (token) {
@@ -14,6 +27,7 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
+// Base query with automatic token refresh
 const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
   args,
   api,
@@ -21,34 +35,48 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
 ) => {
   let result = await baseQuery(args, api, extraOptions);
 
-  if (result.error && result.error.status === 401) {
-    // try to refresh token
+  // Handle 401 Unauthorized - attempt token refresh
+  if (result.error?.status === 401) {
     const refreshToken = (api.getState() as RootState).auth.refreshToken;
 
-    const refreshResult = await baseQuery(
-      {
-        url: "/auth/refresh-token",
-        method: "POST",
-        body: { refreshToken },
-      },
-      api,
-      extraOptions
-    );
+    if (!refreshToken) {
+      // No refresh token available, logout user
+      api.dispatch({ type: "auth/logout" });
+      return result;
+    }
 
-    if (refreshResult.data) {
-      const newAccessToken = (refreshResult.data as any).accessToken;
-      const newRefreshToken = (refreshResult.data as any).refreshToken;
+    try {
+      const refreshResult = await baseQuery(
+        {
+          url: "/auth/token/refresh",
+          method: "POST",
+          body: { refreshToken },
+        },
+        api,
+        extraOptions
+      );
 
-      // store new tokens
-      api.dispatch({
-        type: "auth/setCredentials",
-        payload: { accessToken: newAccessToken, refreshToken: newRefreshToken },
-      });
+      if (refreshResult.data) {
+        const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+          refreshResult.data as RefreshTokenResponse;
 
-      // retry original query
-      result = await baseQuery(args, api, extraOptions);
-    } else {
-      // logout if refresh fails
+        // Store new tokens
+        api.dispatch({
+          type: "auth/setCredentials",
+          payload: {
+            accessToken: newAccessToken,
+            refreshToken: newRefreshToken,
+          },
+        });
+
+        // Retry original query with new token
+        result = await baseQuery(args, api, extraOptions);
+      } else {
+        // Refresh failed, logout user
+        api.dispatch({ type: "auth/logout" });
+      }
+    } catch (error) {
+      console.error("Token refresh error:", error);
       api.dispatch({ type: "auth/logout" });
     }
   }
@@ -56,7 +84,10 @@ const baseQueryWithReauth: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQue
   return result;
 };
 
+// Create API slice with base configuration
 export const apiSlice = createApi({
   baseQuery: baseQueryWithReauth,
+  tagTypes: ["Auth", "User",],
   endpoints: () => ({}),
 });
+

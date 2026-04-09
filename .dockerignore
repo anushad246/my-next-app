@@ -1,0 +1,28 @@
+# Dependencies & build artifacts
+node_modules
+.next
+out
+
+# Environment files (supply these at build time, don't bake secrets into the image)
+.env*.local
+.env
+
+# Version control
+.git
+.gitignore
+
+# Editor & OS
+.vscode
+.DS_Store
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+
+# Docker files themselves
+Dockerfile*
+.dockerignore
+
+# Docs
+README.md
